@@ -47,6 +47,7 @@
 #include "ur_msgs/IOStates.h"
 #include "ur_msgs/Digital.h"
 #include "ur_msgs/Analog.h"
+#include "ur_msgs/urscript.h"
 #include "std_msgs/String.h"
 #include <controller_manager/controller_manager.h>
 #include <realtime_tools/realtime_publisher.h>
@@ -68,6 +69,7 @@ protected:
 	control_msgs::FollowJointTrajectoryResult result_;
 	ros::Subscriber speed_sub_;
 	ros::Subscriber urscript_sub_;
+	ros::ServiceServer urscript_srv_;
 	ros::ServiceServer io_srv_;
 	ros::ServiceServer payload_srv_;
 	std::thread* rt_publish_thread_;
@@ -209,6 +211,9 @@ public:
 			urscript_sub_ = nh_.subscribe("ur_driver/URScript", 1,
 					&RosWrapper::urscriptInterface, this);
 
+			/**************************************/
+			urscript_srv_ = nh_.advertiseService("ur_driver/URScript_srv",
+					&RosWrapper::urscriptInterface_srv,this);
 			io_srv_ = nh_.advertiseService("ur_driver/set_io",
 					&RosWrapper::setIO, this);
 			payload_srv_ = nh_.advertiseService("ur_driver/set_payload",
@@ -558,8 +563,17 @@ private:
 	}
 	void urscriptInterface(const std_msgs::String::ConstPtr& msg) {
 
+		ROS_INFO_STREAM("has subscribed the designed joint states.");
 		robot_.rt_interface_->addCommandToQueue(msg->data);
 
+	}
+
+/*********************************************/
+	bool urscriptInterface_srv(ur_msgs::urscript::Request &req, ur_msgs::urscript::Response &res)
+	{
+		robot_.rt_interface_->addCommandToQueue(req.script);
+		res.success = true;
+		return res.success;
 	}
 
 	void rosControlLoop() {
