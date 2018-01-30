@@ -700,7 +700,9 @@ private:
 			wrench_msg.wrench.torque.z = tcp_force[5];
 			wrench_pub.publish(wrench_msg);
 
-            // Tool vector: Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), where rx, ry and rz is a rotation vector representation of the tool orientation
+            // Tool vector: Actual Cartesian coordinates of the tool: (x,y,z,rx,ry,rz), 
+			//where rx, ry and rz is a rotation vector representation of the tool orientation
+			//和示教器上末端位姿的表达一样
             std::vector<double> tool_vector_actual = robot_.rt_interface_->robot_state_->getToolVectorActual();
 
             //Create quaternion
@@ -712,7 +714,7 @@ private:
             if (angle < 1e-16) {
                 quat.setValue(0, 0, 0, 1);
             } else {
-                quat.setRotation(tf::Vector3(rx/angle, ry/angle, rz/angle), angle);
+                quat.setRotation(tf::Vector3(rx/angle, ry/angle, rz/angle), angle);//提供了单位向量转轴和转角
             }
 
             //Create and broadcast transform
@@ -720,6 +722,20 @@ private:
             transform.setOrigin(tf::Vector3(tool_vector_actual[0], tool_vector_actual[1], tool_vector_actual[2]));
             transform.setRotation(quat);
             br.sendTransform(tf::StampedTransform(transform, joint_msg.header.stamp, base_frame_, tool_frame_));
+																	//tool_frame_相对于base_frame_的变换
+			/*****************************************
+			for(int i=0;i<6;i++)
+			{
+				ROS_INFO_STREAM("data from actual robot: "<<tool_vector_actual[i]);
+			}
+			std::cout<<std::endl;
+			ROS_INFO_STREAM("axis and angle: "<<"["<<rx/angle<<" "<<ry/angle<<" "<<rz/angle<<" "<<angle<<"]");
+			std::cout<<std::endl;
+			ROS_INFO_STREAM("Quaternion: "<<"["<<quat[0]<<" "<<quat[1]<<" "<<quat[2]<<" "<<quat[3]<<"]");
+			std::cout<<std::endl;
+			*******/
+
+			/************************************************/
 
             //Publish tool velocity
             std::vector<double> tcp_speed =
